@@ -1,5 +1,4 @@
 module CountingChambers
-
 using GAP
 using Nemo
 
@@ -11,7 +10,7 @@ end
 
 import Base.copy
 
-export characteristic_polynomial, number_of_chambers, betti_numbers, pseudo_minimal_image, canonical_image, minimal_image
+export characteristic_polynomial, number_of_chambers, betti_numbers, pseudo_minimal_image, canonical_image, minimal_image, trivial_minimal_image
 
 export threshold_hyperplanes, resonance_hyperplanes, symmetry_threshold, symmetry_resonance
 export regular_24_cell_hyperplanes, symmetry_24_cell, regular_600_cell_hyperplanes, symmetry_600_cell, regular_120_cell_hyperplanes, symmetry_120_cell
@@ -24,16 +23,6 @@ export discriminantal_hyperplanes, symmetry_discriminantal, soft_discriminantal_
 ###########################
 #### Structures
 ###########################
-
-mutable struct datastruct
-	leaves_at_depth::Array{Float64,1}
-	total_leaves_at_depth::Array{Float64,1}
-	betti_at_depth::Array{Float64,1}
-	time_per_depth::Array{Float64,1}
-	mem_per_depth::Array{Float64,1}
-	gctime_per_depth::Array{Float64,1}
-	bytes_per_depth::Array{Float64,1}
-end
 
 mutable struct Node{HT<:Integer}
     hashed_rest::HT
@@ -60,7 +49,6 @@ end
 ###########################
 #### Constructors
 ###########################
-
 
 function Hyperplane_Tree(Hyperplanes; verbose=false)
 	m,n = size(Hyperplanes)
@@ -130,15 +118,15 @@ function Hyperplane_Tree(Hyperplanes; verbose=false)
 		GensDict, StabilizerDict, I_array_cache, J_array_cache, nemo_tmp1, nemo_tmp2, DictLockArray)
 end
 
-function compute_group_data!(T::Hyperplane_Tree, symmetry_group::Union{GAP.GAP_jll.MPtr,Array{Array{Int64,1},1},Nothing}, proportion, max_size, min_size, verbose)
+function compute_group_data!(T::Hyperplane_Tree, SymmetryGroup::Union{GAP.GAP_jll.MPtr,Array{Array{Int64,1},1},Nothing}, proportion, max_size, min_size, verbose)
     m,n = size(T.Hyperplanes[1])
     #Produce necessary group theory data
     GensDict = Dict{Int64,Array{Array{Int64,1},1}}()
 
-    G = symmetry_group
-	if typeof(symmetry_group) == Array{Array{Int64,1},1}
+    G = SymmetryGroup
+	if typeof(SymmetryGroup) == Array{Array{Int64,1},1}
 		perms = []
-		for I in symmetry_group
+		for I in SymmetryGroup
     		push!(perms, GAP.Globals.PermList(GapObj(I)))
        	end
 		G = GAP.Globals.Group(GapObj(perms))
@@ -179,10 +167,10 @@ end
 #### Main Functions
 ###########################
 
-function characteristic_polynomial(H::Array{T,2}; ConstantTerms::Union{Vector{T},Nothing}=nothing, symmetry_group::Union{GAP.GAP_jll.MPtr,Array{Array{Int64,1},1},Nothing}=nothing,
-	MinElt=pseudo_minimal_image, proportion=0.01, max_size=nothing, min_size=nothing, multi_threaded=false, verbose=false) where {T <: Union{Nemo.RingElem,Integer}}
+function characteristic_polynomial(H::Array{T,2}; ConstantTerms::Union{Vector{T},Nothing}=nothing, SymmetryGroup::Union{GAP.GAP_jll.MPtr,Array{Array{Int64,1},1},Nothing}=nothing,
+	OrbitRepresentation=pseudo_minimal_image, proportion=0.01, max_size=nothing, min_size=nothing, multi_threaded=false, verbose=false) where {T <: Union{Nemo.RingElem,Integer}}
 
-	BettiNumbers = betti_numbers(H, ConstantTerms=ConstantTerms, symmetry_group=symmetry_group, MinElt=MinElt,
+	BettiNumbers = betti_numbers(H, ConstantTerms=ConstantTerms, SymmetryGroup=SymmetryGroup, OrbitRepresentation=OrbitRepresentation,
     	proportion=proportion, max_size=max_size, min_size=min_size, multi_threaded=multi_threaded, verbose=verbose)
 
 	R, t = PolynomialRing(ZZ, "t")
@@ -194,15 +182,15 @@ function characteristic_polynomial(H::Array{T,2}; ConstantTerms::Union{Vector{T}
 	return chi
 end
 
-function number_of_chambers(H::Array{T,2}; ConstantTerms::Union{Vector{T},Nothing}=nothing, symmetry_group::Union{GAP.GAP_jll.MPtr,Array{Array{Int64,1},1},Nothing}=nothing,
-	MinElt=pseudo_minimal_image, proportion=0.01, max_size=nothing, min_size=nothing, multi_threaded=false, verbose=false) where {T <: Union{Nemo.RingElem,Integer}}
+function number_of_chambers(H::Array{T,2}; ConstantTerms::Union{Vector{T},Nothing}=nothing, SymmetryGroup::Union{GAP.GAP_jll.MPtr,Array{Array{Int64,1},1},Nothing}=nothing,
+	OrbitRepresentation=pseudo_minimal_image, proportion=0.01, max_size=nothing, min_size=nothing, multi_threaded=false, verbose=false) where {T <: Union{Nemo.RingElem,Integer}}
 
-    return sum(betti_numbers(H, ConstantTerms=ConstantTerms, symmetry_group=symmetry_group, MinElt=MinElt,
+    return sum(betti_numbers(H, ConstantTerms=ConstantTerms, SymmetryGroup=SymmetryGroup, OrbitRepresentation=OrbitRepresentation,
     	proportion=proportion, max_size=max_size, min_size=min_size, multi_threaded=multi_threaded, verbose=verbose))
 end
 
-function betti_numbers(H::Array{T,2}; ConstantTerms::Union{Vector{T},Nothing}=nothing, symmetry_group::Union{GAP.GAP_jll.MPtr,Array{Array{Int64,1},1},Nothing}=nothing,
-    MinElt=pseudo_minimal_image, proportion=0.01, max_size=nothing, min_size=nothing, multi_threaded=false, verbose=false) where {T <: Union{Nemo.RingElem,Integer}}
+function betti_numbers(H::Array{T,2}; ConstantTerms::Union{Vector{T},Nothing}=nothing, SymmetryGroup::Union{GAP.GAP_jll.MPtr,Array{Array{Int64,1},1},Nothing}=nothing,
+    OrbitRepresentation=pseudo_minimal_image, proportion=0.01, max_size=nothing, min_size=nothing, multi_threaded=false, verbose=false) where {T <: Union{Nemo.RingElem,Integer}}
 
 	Arrangement = H
 	if ConstantTerms != nothing
@@ -212,7 +200,7 @@ function betti_numbers(H::Array{T,2}; ConstantTerms::Union{Vector{T},Nothing}=no
 	HT=Hyperplane_Tree(Arrangement; verbose=verbose)
 	n = size(H,2)
 
-	if symmetry_group != nothing
+	if SymmetryGroup != nothing
 		actual_max_size = 2*n
 		if max_size != nothing
 			actual_max_size = max_size
@@ -221,12 +209,12 @@ function betti_numbers(H::Array{T,2}; ConstantTerms::Union{Vector{T},Nothing}=no
 		if min_size != nothing
 			actual_min_size = min_size
 		end
-    	compute_group_data!(HT, symmetry_group, proportion, actual_max_size, actual_min_size, verbose)
+    	compute_group_data!(HT, SymmetryGroup, proportion, actual_max_size, actual_min_size, verbose)
 	else
-        MinElt = trivial_minimal_image
+        OrbitRepresentation = trivial_minimal_image
     end
 
-	delete_restrict_all!(HT, MinElt, multi_threaded, verbose)
+	delete_restrict_all!(HT, OrbitRepresentation, multi_threaded, verbose)
 	BettiNumbers = sum(HT.Betti)
 
 	if ConstantTerms != nothing
@@ -241,12 +229,12 @@ function betti_numbers(H::Array{T,2}; ConstantTerms::Union{Vector{T},Nothing}=no
 	end
 end
 
-function delete_restrict_all!(T::Hyperplane_Tree, MinElt, multi_threaded, verbose)
+function delete_restrict_all!(T::Hyperplane_Tree, OrbitRepresentation, multi_threaded, verbose)
 
     for i in find_depth(T):size(T.Hyperplanes[1],2)-1
         verbose && println("We are at step ", i-1, "-> ",i)
         if find_depth(T) != nothing
-            if MinElt == minimal_image || length(T.L[i]) < 10000
+            if OrbitRepresentation == minimal_image || length(T.L[i]) < 10000
                 current_multi_threaded = false
             else
                 current_multi_threaded = multi_threaded
@@ -254,7 +242,7 @@ function delete_restrict_all!(T::Hyperplane_Tree, MinElt, multi_threaded, verbos
             verbose && println("Multi threaded: ", current_multi_threaded)
     		verbose && println("Nodes in current level:"*string(length(T.L[i])))
     		verbose && println("Nodes total:"*string(sum([length(((T.L[j]))) for j in 1:length(T.L)])))
-            time_data = @timed delete_restrict!(T, MinElt, current_multi_threaded)
+            time_data = @timed delete_restrict!(T, OrbitRepresentation, current_multi_threaded)
             verbose && println(time_data.time, " seconds")
             verbose && print("\n")
 			verbose && println(sum(sum(T.Betti)))
@@ -271,7 +259,7 @@ end
 
 #This function scans through each key in a particular level and calls `branch`
 #  on those nodes
-function delete_restrict!(T::Hyperplane_Tree, MinElt, multi_threaded)
+function delete_restrict!(T::Hyperplane_Tree, OrbitRepresentation, multi_threaded)
 	depth = find_depth(T)
 	if depth == nothing
 		println("Already finished")
@@ -286,11 +274,11 @@ function delete_restrict!(T::Hyperplane_Tree, MinElt, multi_threaded)
 
     if multi_threaded
     	Threads.@threads for CurrentRestriction in collect(keys(AllLeaves[depth]))
-    		branch!(T, CurrentRestriction, depth, m, n, MinElt)
+    		branch!(T, CurrentRestriction, depth, m, n, OrbitRepresentation)
         end
     else
         for CurrentRestriction in keys(AllLeaves[depth])
-            branch!(T, CurrentRestriction, depth, m, n, MinElt)
+            branch!(T, CurrentRestriction, depth, m, n, OrbitRepresentation)
         end
     end
 
@@ -299,7 +287,7 @@ function delete_restrict!(T::Hyperplane_Tree, MinElt, multi_threaded)
 	return nothing
 end
 
-function branch!(T::Hyperplane_Tree, CurrentHashedKey, depth::Int64, m::Int64, n::Int64, MinElt)
+function branch!(T::Hyperplane_Tree, CurrentHashedKey, depth::Int64, m::Int64, n::Int64, OrbitRepresentation)
 
 	tid = Threads.threadid()
 
@@ -331,7 +319,7 @@ function branch!(T::Hyperplane_Tree, CurrentHashedKey, depth::Int64, m::Int64, n
         @inbounds T.Betti[tid][k+3] += multiplicity*2
         @inbounds T.Betti[tid][k+4] += multiplicity
     else
-		place_right_leaf!(T, CurrentNode, k, depth, right_next_unbroken, MinElt)
+		place_right_leaf!(T, CurrentNode, k, depth, right_next_unbroken, OrbitRepresentation)
 	end
 
 	#####Left child construction
@@ -342,7 +330,7 @@ function branch!(T::Hyperplane_Tree, CurrentHashedKey, depth::Int64, m::Int64, n
 		#If k==0 then we already know that the first hyperplane will be the next unbroken
 		#  and since this happens once at every level, it's worth the extra code block
 		if k == 0
-            place_left_leaf!(T, CurrentNode, k, depth, depth+1, MinElt)
+            place_left_leaf!(T, CurrentNode, k, depth, depth+1, OrbitRepresentation)
         else
 			if left_next_unbroken == n
                 @inbounds T.Betti[tid][k+1] += multiplicity
@@ -352,20 +340,20 @@ function branch!(T::Hyperplane_Tree, CurrentHashedKey, depth::Int64, m::Int64, n
                 @inbounds T.Betti[tid][k+2] += multiplicity*2
                 @inbounds T.Betti[tid][k+3] += multiplicity
             else
-				place_left_leaf!(T, CurrentNode, k, depth, left_next_unbroken, MinElt)
+				place_left_leaf!(T, CurrentNode, k, depth, left_next_unbroken, OrbitRepresentation)
 			end
 		end
 	end
 	return nothing
 end
 
-function place_right_leaf!(T::Hyperplane_Tree, CurrentNode::Node, k, depth::Int64, target_depth::Int64, MinElt)
+function place_right_leaf!(T::Hyperplane_Tree, CurrentNode::Node, k, depth::Int64, target_depth::Int64, OrbitRepresentation)
 
     tid = Threads.threadid()
     @inbounds T.TmpRestArray[tid][k+1] = depth
     rest = view(T.TmpRestArray[tid], 1:k+1)
 
-	if MinElt == trivial_minimal_image
+	if OrbitRepresentation == trivial_minimal_image
 
 		FN = Node{T.hash_type}(key_hash(rest,T.hash_type, T.hash_base), deepcopy(CurrentNode.multiplicity))
         begin
@@ -381,7 +369,7 @@ function place_right_leaf!(T::Hyperplane_Tree, CurrentNode::Node, k, depth::Int6
 
     Gens = T.GensDict[tid][target_depth]
     Stab = T.StabilizerDict[target_depth]
-    MinimalImage = MinElt(T, Gens, Stab, rest)
+    MinimalImage = OrbitRepresentation(T, Gens, Stab, rest)
     MinimalImageHash = key_hash(MinimalImage,T.hash_type,T.hash_base)
     #Check if this minimal element has already been seen
     begin
@@ -408,12 +396,12 @@ function place_right_leaf!(T::Hyperplane_Tree, CurrentNode::Node, k, depth::Int6
 	T.TmpRestArray[tid][k+1] = 0
 end
 
-function place_left_leaf!(T::Hyperplane_Tree, CurrentNode::Node, k, depth, target_depth, MinElt)
+function place_left_leaf!(T::Hyperplane_Tree, CurrentNode::Node, k, depth, target_depth, OrbitRepresentation)
 
 	tid = Threads.threadid()
     rest = view(T.TmpRestArray[tid], 1:k)
 
-	if MinElt == trivial_minimal_image
+	if OrbitRepresentation == trivial_minimal_image
         begin
             lock(T.DictLockArray[target_depth])
             try
@@ -428,7 +416,7 @@ function place_left_leaf!(T::Hyperplane_Tree, CurrentNode::Node, k, depth, targe
     Gens = T.GensDict[tid][target_depth]
     Stab = T.StabilizerDict[target_depth]
 
-    MinimalImage = MinElt(T, Gens, Stab, rest)
+    MinimalImage = OrbitRepresentation(T, Gens, Stab, rest)
     MinimalImageHash = key_hash(MinimalImage,T.hash_type,T.hash_base)
     begin
         lock(T.DictLockArray[target_depth])
@@ -672,7 +660,7 @@ end
 
 function canonical_image(T, Gens::Array{Array{Int64,1},1}, G::GAP.GAP_jll.MPtr, I::AbstractArray{Int64,1})::Array{Int64,1}
 	#last two arguments do nothing; they're there only to be consistent with stochastic_greedy
-    m=GAP.Globals.CanonicalImage(G,GapObj(I),GAP.Globals.OnSets)
+    m=GAP.Globals.CanonicalImage(G,GapObj(Array(I)),GAP.Globals.OnSets)
     K=GAP.gap_to_julia(m)
     return(K)
 end
