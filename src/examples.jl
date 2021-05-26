@@ -324,7 +324,7 @@ function discriminantal_hyperplanes(MyPoints::Array{fmpq,2})
 end
 
 
-function symmetry_discriminantal(n::Int64,d::Int64)
+function symmetry_discriminantal(d::Int64,n::Int64)
     Npoints=n
     PointDim=d
     HypIterator=powerset(collect(1:Npoints),PointDim,PointDim)
@@ -358,14 +358,14 @@ function symmetry_discriminantal(n::Int64,d::Int64)
 end
 
 
-function discriminantal_hyperplanes(n::Int64,d::Int64)
+function discriminantal_hyperplanes(d::Int64,n::Int64)
     MyPoints=[fmpq(rand(-1000:1000)//rand(-1000:1000)) for i in zeros(n,d)]
     MyFloatPoints=[float(i*1.0) for i in MyPoints]
     D=discriminantal_hyperplanes(MyPoints)
     return D
 end
 
-function soft_discriminantal_hyperplanes(n::Int64,d::Int64)
+function soft_discriminantal_hyperplanes(d::Int64,n::Int64)
     d=d-1
     n=n-1
     MyPoints=[fmpq(rand(-1000:1000)//rand(-1000:1000)) for i in zeros(n-d,d)]
@@ -385,7 +385,7 @@ function soft_discriminantal_hyperplanes(n::Int64,d::Int64)
 end
 
 
-function symmetry_soft_discriminantal(n::Int64,d::Int64)
+function symmetry_soft_discriminantal(d::Int64,n::Int64)
     d=d-1
     n=n-1
     MyPoints=[fmpq(rand(-1000:1000)//rand(-1000:1000)) for i in zeros(n-d,d)]
