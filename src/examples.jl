@@ -179,7 +179,7 @@ function demicube_hyperplanes(n::Int64, ring=nothing)
 end
 
 function symmetry_demicube(n)
-    G = symmetry_ncube(n)
+    G = symmetry_threshold(n)
     ind = indices_demicube(n)
     ind_shifted = [i+1 for i in ind]
     AutDC = GAP.Globals.Stabilizer(G, GapObj(ind_shifted), GAP.Globals.OnSets)
