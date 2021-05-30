@@ -5,6 +5,15 @@ This package counts chambers of a hyperplane arrangement by computing its charac
 It performs this computation via a modified deletion-restriction algorithm which takes advantage of the arrangement's symmetries, as detailed in [Enumerating chambers of hyperplane arrangements with symmetry](https://arxiv.org/INSERTLINKLATER). 
 
 Our package can be loaded by
+
+
+```
+]add CountingChambers
+using CountingChambers
+```
+
+or alternatively, by
+
 ```
 ]add https://github.com/tbrysiewicz/CountingChambers
 using CountingChambers
