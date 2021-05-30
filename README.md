@@ -4,6 +4,8 @@
 This package counts chambers of a hyperplane arrangement by computing its characteristic polynomial, or equivalently, its Betti numbers.
 It performs this computation via a modified deletion-restriction algorithm which takes advantage of the arrangement's symmetries, as detailed in [Enumerating chambers of hyperplane arrangements with symmetry](https://arxiv.org/INSERTLINKLATER).
 
+Further examples and explanation can be found [here](https://mathrepo.mis.mpg.de/CountingChambers/index.html) where you can also try the code via `binder` without installing `julia`.
+
 ## Getting started
 
 Our package can be loaded (after starting `julia`) by
