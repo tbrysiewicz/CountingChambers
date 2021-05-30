@@ -14,7 +14,7 @@ Hyperplane arrangements may be defined over the integers, rationals, or an algeb
 
 When the arrangement **A** of **n** hyperplanes in **d** dimensional space is central (all hyperplanes go through the origin), it is represented as a **d** by **n** matrix whose columns are the normal vectors of those hyperplanes. 
 
-For non-central arrangements, the input to our functions require a vector **c** of constants for which the **n** equalities encoded as **Ax=c** represent the hyperplanes. For example,
+For non-central arrangements, the input to our functions require a vector **c** of constants for which the **n** equalities encoded as **xA=c** represent the hyperplanes. For example,
 
 ```
 A = [-1 1 1 0; 1 0 1 1] # The four columns of A represent the normal vectors of the arrangement.
@@ -23,7 +23,7 @@ number_of_chambers(A; ConstantTerms=c)
    10
 ```
 
-outputs **10** as the number of chambers of the arrangement **Ax=c** of 4 hyperplanes in 2-dimensional space.
+outputs **10** as the number of chambers of the arrangement **xA=c** of 4 hyperplanes in 2-dimensional space.
 
 
 To input a symmetry group of an arrangement, as a subgroup of the symmetric group on **n** elements, one provides a collection of permutations which generate it. These permutations are written in single line notation. 
