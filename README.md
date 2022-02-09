@@ -77,7 +77,7 @@ GR7 = symmetry_resonance(7)
    [1, 127, 7035, 215439, 3831835, 37769977, 169824305, 135677633]
 ```
 
-The arrangements discussed in [Enumerating chambers of hyperplane arrangements with symmetry](https://arxiv.org/INSERTLINKLATER) and their symmetry groups are exported in this package:
+The arrangements discussed in [Enumerating chambers of hyperplane arrangements with symmetry](https://arxiv.org/abs/2105.14542) and their symmetry groups are exported in this package:
 ```
 n=6
 R=(resonance_hyperplanes(n),symmetry_resonance(n))
