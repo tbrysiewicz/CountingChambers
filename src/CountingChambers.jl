@@ -667,7 +667,7 @@ end
 
 #returns a permutation from gap to julia
 function gap_to_julia_perm(g::GAP.GAP_jll.MPtr, N::Int64)::Array{Int64,1}
-    GapObj(GAP.Globals.ListPerm(g,N))
+    GAP.gap_to_julia(GAP.Globals.ListPerm(g,N))
 end
 
 #If G is very small, i.e. at most 20 we return the entire group assuming k=|G|
