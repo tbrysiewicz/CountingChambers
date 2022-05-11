@@ -230,6 +230,8 @@ function betti_numbers(H::Array{T,2}; ConstantTerms::Union{Vector{T},Nothing}=no
 	end
 end
 
+const whitney_numbers = betti_numbers
+
 function delete_restrict_all!(T::Hyperplane_Tree, OrbitRepresentation, multi_threaded, verbose)
 
     for i in find_depth(T):size(T.Hyperplanes[1],2)-1
