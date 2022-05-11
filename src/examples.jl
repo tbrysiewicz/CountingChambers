@@ -119,7 +119,7 @@ function permutohedron_hyperplanes(n::Int64, ring=nothing)
     return M
 end
 
-function symmetry_permutohedron(n::Int64)::GAP.GAP_jll.MPtr
+function symmetry_permutohedron(n::Int64)
     matrix = permutohedron_hyperplanes(n)
     permuted_row_permutations = GapObj(find_all_permutations_from_row_permutations(matrix,2))
 
@@ -145,7 +145,7 @@ function crosspolytope_hyperplanes(n::Int64, ring=nothing)
     return M
 end
 
-function symmetry_crosspolytope(n::Int64)::GAP.GAP_jll.MPtr
+function symmetry_crosspolytope(n::Int64)
     return GAP.Globals.WreathProduct(GAP.Globals.SymmetricGroup(2),GAP.Globals.SymmetricGroup(n))
 end
 

@@ -39,7 +39,7 @@ mutable struct Hyperplane_Tree{T <: Union{Nemo.RingElem,Integer}, HT<:Integer}
 	L::Array{Dict{HT,Node{HT}}}#The leaves dictionary, keys are (perfectly) hashed arrays
 	Betti::Array{Array{Int64,1},1}#one entry for every thread
     GensDict::Array{Dict{Int64,Array{Array{Int64,1},1}},1}#one entry for every thread
-    StabilizerDict::Dict{Int64,GAP.GAP_jll.MPtr}
+    StabilizerDict::Dict{Int64,GAP.GapObj}
     I_array_cache::Dict{Int64,Dict{Int64, Array{Int64}}}
     J_array_cache::Dict{Int64,Dict{Int64, Array{Int64}}}
     nemo_tmp1::Dict{Int64,T}
@@ -88,7 +88,7 @@ function Hyperplane_Tree(Hyperplanes; verbose=false)
 	end
 
     GensDict = Array{Dict{Int64,Array{Array{Int64,1},1}},1}()
-    StabilizerDict = Dict{Int64,GAP.GAP_jll.MPtr}()
+    StabilizerDict = Dict{Int64,GAP.GapObj}()
 
     I_array_cache = Dict{Int64,Dict{Int, Array{Int64}}}()
     J_array_cache = Dict{Int64,Dict{Int, Array{Int64}}}()
@@ -119,7 +119,7 @@ function Hyperplane_Tree(Hyperplanes; verbose=false)
 		GensDict, StabilizerDict, I_array_cache, J_array_cache, nemo_tmp1, nemo_tmp2, DictLockArray)
 end
 
-function compute_group_data!(T::Hyperplane_Tree, SymmetryGroup::Union{GAP.GAP_jll.MPtr,Array{Array{Int64,1},1},Nothing}, proportion, max_size, min_size, verbose)
+function compute_group_data!(T::Hyperplane_Tree, SymmetryGroup::Union{GAP.GapObj,Array{Array{Int64,1},1},Nothing}, proportion, max_size, min_size, verbose)
     m,n = size(T.Hyperplanes[1])
     #Produce necessary group theory data
     GensDict = Dict{Int64,Array{Array{Int64,1},1}}()
@@ -168,7 +168,7 @@ end
 #### Main Functions
 ###########################
 
-function characteristic_polynomial(H::Array{T,2}; ConstantTerms::Union{Vector{T},Nothing}=nothing, SymmetryGroup::Union{GAP.GAP_jll.MPtr,Array{Array{Int64,1},1},Nothing}=nothing,
+function characteristic_polynomial(H::Array{T,2}; ConstantTerms::Union{Vector{T},Nothing}=nothing, SymmetryGroup::Union{GAP.GapObj,Array{Array{Int64,1},1},Nothing}=nothing,
 	OrbitRepresentation=pseudo_minimal_image, proportion=0.01, max_size=nothing, min_size=nothing, multi_threaded=false, verbose=false) where {T <: Union{Nemo.RingElem,Integer}}
 
 	BettiNumbers = betti_numbers(H, ConstantTerms=ConstantTerms, SymmetryGroup=SymmetryGroup, OrbitRepresentation=OrbitRepresentation,
@@ -183,14 +183,14 @@ function characteristic_polynomial(H::Array{T,2}; ConstantTerms::Union{Vector{T}
 	return chi
 end
 
-function number_of_chambers(H::Array{T,2}; ConstantTerms::Union{Vector{T},Nothing}=nothing, SymmetryGroup::Union{GAP.GAP_jll.MPtr,Array{Array{Int64,1},1},Nothing}=nothing,
+function number_of_chambers(H::Array{T,2}; ConstantTerms::Union{Vector{T},Nothing}=nothing, SymmetryGroup::Union{GAP.GapObj,Array{Array{Int64,1},1},Nothing}=nothing,
 	OrbitRepresentation=pseudo_minimal_image, proportion=0.01, max_size=nothing, min_size=nothing, multi_threaded=false, verbose=false) where {T <: Union{Nemo.RingElem,Integer}}
 
     return sum(betti_numbers(H, ConstantTerms=ConstantTerms, SymmetryGroup=SymmetryGroup, OrbitRepresentation=OrbitRepresentation,
     	proportion=proportion, max_size=max_size, min_size=min_size, multi_threaded=multi_threaded, verbose=verbose))
 end
 
-function betti_numbers(H::Array{T,2}; ConstantTerms::Union{Vector{T},Nothing}=nothing, SymmetryGroup::Union{GAP.GAP_jll.MPtr,Array{Array{Int64,1},1},Nothing}=nothing,
+function betti_numbers(H::Array{T,2}; ConstantTerms::Union{Vector{T},Nothing}=nothing, SymmetryGroup::Union{GAP.GapObj,Array{Array{Int64,1},1},Nothing}=nothing,
     OrbitRepresentation=pseudo_minimal_image, proportion=0.01, max_size=nothing, min_size=nothing, multi_threaded=false, verbose=false) where {T <: Union{Nemo.RingElem,Integer}}
 
 	# Treat the trivial case of one-dimensional arrangements separatly.
@@ -661,14 +661,14 @@ function get_stoch_gens(H,n, proportion, max_size, min_size)
 	end
 end
 
-function minimal_image(T, Gens::Array{Array{Int64,1},1}, G::GAP.GAP_jll.MPtr, I::AbstractArray{Int64,1})::Array{Int64,1}
+function minimal_image(T, Gens::Array{Array{Int64,1},1}, G::GAP.GapObj, I::AbstractArray{Int64,1})::Array{Int64,1}
 	#last two arguments do nothing; they're there only to be consistent with stochastic_greedy
     m=GAP.Globals.MinimalImage(G,GapObj(Array(I)),GAP.Globals.OnSets)
     K=GAP.gap_to_julia(m)
     return(K)
 end
 
-function canonical_image(T, Gens::Array{Array{Int64,1},1}, G::GAP.GAP_jll.MPtr, I::AbstractArray{Int64,1})::Array{Int64,1}
+function canonical_image(T, Gens::Array{Array{Int64,1},1}, G::GAP.GapObj, I::AbstractArray{Int64,1})::Array{Int64,1}
 	#last two arguments do nothing; they're there only to be consistent with stochastic_greedy
     m=GAP.Globals.CanonicalImage(G,GapObj(Array(I)),GAP.Globals.OnSets)
     K=GAP.gap_to_julia(m)
@@ -676,12 +676,12 @@ function canonical_image(T, Gens::Array{Array{Int64,1},1}, G::GAP.GAP_jll.MPtr, 
 end
 
 #returns a permutation from gap to julia
-function gap_to_julia_perm(g::GAP.GAP_jll.MPtr, N::Int64)::Array{Int64,1}
+function gap_to_julia_perm(g::GAP.GapObj, N::Int64)::Array{Int64,1}
     GAP.gap_to_julia(GAP.Globals.ListPerm(g,N))
 end
 
 #If G is very small, i.e. at most 20 we return the entire group assuming k=|G|
-function produce_all_permutations(G::GAP.GAP_jll.MPtr ,N::Int64, k::Int64)::Array{Array{Int64,1},1}
+function produce_all_permutations(G::GAP.GapObj ,N::Int64, k::Int64)::Array{Array{Int64,1},1}
     elements=GAP.Globals.List(G)
     perms = []
     for i in 2:k
@@ -690,7 +690,7 @@ function produce_all_permutations(G::GAP.GAP_jll.MPtr ,N::Int64, k::Int64)::Arra
     return(perms)
 end
 
-function produce_many_permutations(G::GAP.GAP_jll.MPtr ,N::Int64, k::Int64)::Array{Array{Int64,1},1}
+function produce_many_permutations(G::GAP.GapObj ,N::Int64, k::Int64)::Array{Array{Int64,1},1}
     Ggens = GAP.Globals.GeneratorsOfGroup(G)
     ngens = length(Ggens)
     JuliaGens = [gap_to_julia_perm(Ggens[i],N) for i in 1:ngens]
@@ -729,7 +729,7 @@ function greedy_min_elt(I::AbstractArray{Int64,1}, J::AbstractArray{Int64,1}, Ge
 end
 
 
-function pseudo_minimal_image(T, Gens::Array{Array{Int64,1},1}, G::GAP.GAP_jll.MPtr, I::AbstractArray{Int64,1})::Array{Int64,1}
+function pseudo_minimal_image(T, Gens::Array{Array{Int64,1},1}, G::GAP.GapObj, I::AbstractArray{Int64,1})::Array{Int64,1}
 	I_new = T.I_array_cache[Threads.threadid()][length(I)]
     J_new = T.J_array_cache[Threads.threadid()][length(I)]
     @simd for i in eachindex(I)
@@ -738,7 +738,7 @@ function pseudo_minimal_image(T, Gens::Array{Array{Int64,1},1}, G::GAP.GAP_jll.M
     return greedy_min_elt(I_new,J_new,Gens)
 end
 
-function trivial_minimal_image(T, Gens::Array{Array{Int64,1},1}, G::GAP.GAP_jll.MPtr, I::AbstractArray{Int64,1})::Array{Int64,1}
+function trivial_minimal_image(T, Gens::Array{Array{Int64,1},1}, G::GAP.GapObj, I::AbstractArray{Int64,1})::Array{Int64,1}
     return I
 end
 
