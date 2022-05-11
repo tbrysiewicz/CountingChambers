@@ -195,7 +195,7 @@ function symmetry_demicube(n)
 end
 
 ######################################################
-# REGULAR 4 POLYTOPES
+# REGULAR POLYTOPES
 ######################################################
 
 function pos_neg_combinations(l, symmetry_group)
@@ -214,6 +214,52 @@ function pos_neg_combinations(l, symmetry_group)
         end
     end
     return unique(M)
+end
+
+function dodecahedron_hyperplanes()
+    Qx, x = PolynomialRing(FlintQQ, "x");
+    K, phi = NumberField(x^2 -x -1, "phi");
+
+    M = []
+    S = GAP.Globals.SymmetricGroup(3)
+    A = GAP.Globals.AlternatingGroup(3)
+
+    l = nf_elem[K(1), K(1), K(1)]
+    M = vcat(M,pos_neg_combinations(l, S))
+
+    l = nf_elem[K(phi), K(phi+1), K(0)]
+    M = vcat(M,pos_neg_combinations(l, A))
+
+    h20 = [vcat(nf_elem[K(1)],v) for v in M]
+    h20 = [K(j) for k in 1:20 for j in h20[k]]
+    h20 = reshape(h20, 4,20)
+    return h20
+end
+
+function symmetry_dodecahedron()
+    M = dodecahedron_hyperplanes()
+    return find_all_permutations(M, 2)
+end
+
+function icosahedron_hyperplanes()
+    Qx, x = PolynomialRing(FlintQQ, "x");
+    K, phi = NumberField(x^2 -x -1, "phi");
+
+    M = []
+    A = GAP.Globals.AlternatingGroup(3)
+
+    l = nf_elem[K(1), K(phi), K(0)]
+    M = vcat(M,pos_neg_combinations(l, A))
+
+    h12 = [vcat(nf_elem[K(1)],v) for v in M]
+    h12 = [K(j) for k in 1:12 for j in h12[k]]
+    h12 = reshape(h12, 4,12)
+    return h12
+end
+
+function symmetry_icosahedron()
+    M = icosahedron_hyperplanes()
+    return find_all_permutations(M, 2)
 end
 
 # Vertices: all permuations of  (±1,±1,0,0)
