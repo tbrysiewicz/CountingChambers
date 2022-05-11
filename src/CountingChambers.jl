@@ -193,11 +193,18 @@ end
 function betti_numbers(H::Array{T,2}; ConstantTerms::Union{Vector{T},Nothing}=nothing, SymmetryGroup::Union{GAP.GAP_jll.MPtr,Array{Array{Int64,1},1},Nothing}=nothing,
     OrbitRepresentation=pseudo_minimal_image, proportion=0.01, max_size=nothing, min_size=nothing, multi_threaded=false, verbose=false) where {T <: Union{Nemo.RingElem,Integer}}
 
+	# Treat the trivial case of one-dimensional arrangements separatly.
+    if size(H,1) == 1 && ConstantTerms == nothing
+        return [1,1]
+    end
+
 	Arrangement = H
 	if ConstantTerms != nothing
 		#Compute chambers of the coned arrangement and half the number of chambers
     	Arrangement = coned_arrangement(H, ConstantTerms)
     end
+
+
 	HT=Hyperplane_Tree(Arrangement; verbose=verbose)
 	n = size(H,2)
 
