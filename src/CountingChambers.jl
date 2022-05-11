@@ -13,7 +13,7 @@ import Base.copy
 export characteristic_polynomial, number_of_chambers, whitney_numbers, betti_numbers, pseudo_minimal_image, canonical_image, minimal_image, trivial_minimal_image
 
 export threshold_hyperplanes, resonance_hyperplanes, symmetry_threshold, symmetry_resonance
-export dodecahedron_hyperplanes, symmetry_dodecahedron, icosahedron_hyperplanes, symmetry_icosahedron, regular_24_cell_hyperplanes, symmetry_24_cell,
+export dodecahedron_hyperplanes, symmetry_dodecahedron, icosahedron_hyperplanes, symmetry_icosahedron, regular_24_cell_hyperplanes, symmetry_24_cell
 export regular_600_cell_hyperplanes, symmetry_600_cell, regular_120_cell_hyperplanes, symmetry_120_cell
 export crosspolytope_hyperplanes, symmetry_crosspolytope, demicube_hyperplanes, symmetry_demicube, permutohedron_hyperplanes, symmetry_permutohedron
 export discriminantal_hyperplanes, symmetry_discriminantal, soft_discriminantal_hyperplanes, symmetry_soft_discriminantal
