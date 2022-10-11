@@ -1,7 +1,7 @@
 name = "CountingChambers"
 uuid = "23b3ee6f-a072-41d8-ada8-267420d58637"
 authors = ["tbrysiewicz <taylorbrysiewicz@gmail.com>"]
-version = "0.2.0"
+version = "0.2.1"
 
 [deps]
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
