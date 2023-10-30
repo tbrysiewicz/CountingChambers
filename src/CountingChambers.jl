@@ -317,7 +317,7 @@ function branch!(T::Hyperplane_Tree, CurrentHashedKey, depth::Int64, m::Int64, n
     if T.Hyperplanes[tid] isa Matrix
     	T.TmpHyperplanes[tid] .= T.Hyperplanes[tid]
     else
-		T.TmpHyperplanes[tid] = deepcopy(T.Hyperplanes[tid])
+		map!(identity, T.TmpHyperplanes[tid], T.Hyperplanes[tid])
 	end
 	
 
