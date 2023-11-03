@@ -490,10 +490,13 @@ end
 function pivot_step!(M, col_index, firstr, depth, nr, nc; extra_indices=nothing)
 
 	firstnz = firstr
-    while iszero(M[firstnz,col_index]) && firstnz <= nr
+
+    while firstnz <= size(M)[1] && iszero(M[firstnz,col_index])
         firstnz += 1
     end
-    @assert firstnz <= nr
+    if firstnz > nr
+    	return
+    end
 
     if col_index == depth
     	start_tail_index = depth+1
@@ -620,7 +623,10 @@ function compare_columns(A::Union{AbstractArray{T,2},MatElem}, ind_v::Int64, ind
     while firstnz <= len && iszero(A[firstnz,ind_v])
         firstnz += 1
     end
-    @assert firstnz <= len
+    #@assert firstnz <= len
+    if firstnz > len 
+    	return true
+    end
 
     for i in 1:(firstnz-1)
         if !iszero(A[i,ind_w])
