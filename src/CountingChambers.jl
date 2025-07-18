@@ -31,10 +31,10 @@ mutable struct Node{HT<:Integer}
 end
 
 mutable struct Hyperplane_Tree{T <: Union{Nemo.RingElem,Integer}, HT<:Integer}
-	Hyperplanes::Array{Array{T,2},1}#one entry for every thread
+	Hyperplanes::Union{Vector{MatElem},Vector{Matrix{T}}}#one entry for every thread
 	hash_type::Union{Type{Int64},Type{Int128},Type{BigInt}}
 	hash_base::Int64
-	TmpHyperplanes::Array{Array{T,2},1}#one entry for every thread
+	TmpHyperplanes::Union{Vector{MatElem},Vector{Matrix{T}}}#one entry for every thread
 	TmpRestArray::Array{Array{Int64,1},1}#one array for every thread
 	L::Array{Dict{HT,Node{HT}}}#The leaves dictionary, keys are (perfectly) hashed arrays
 	Betti::Array{Array{Int64,1},1}#one entry for every thread
@@ -68,11 +68,15 @@ function Hyperplane_Tree(Hyperplanes; verbose=false)
 
 	HyperplanesArray = Array{Array{T,2},1}()
 	TmpHyperplanesArray = Array{Array{T,2},1}()
+	if Hyperplanes isa MatElem
+		HyperplanesArray = Array{MatElem,1}()
+		TmpHyperplanesArray = Array{MatElem,1}()
+	end
 	TmpRestArray = Array{Array{Int64,1},1}()
 
 	for id in 1:Threads.nthreads()
-		push!(HyperplanesArray, copy(Hyperplanes))
-		push!(TmpHyperplanesArray, copy(Hyperplanes))
+		push!(HyperplanesArray, deepcopy(Hyperplanes))
+		push!(TmpHyperplanesArray, deepcopy(Hyperplanes))
 		push!(TmpRestArray,zeros(Int64,m))
 	end
 
@@ -168,7 +172,7 @@ end
 #### Main Functions
 ###########################
 
-function characteristic_polynomial(H::Array{T,2}; ConstantTerms::Union{Vector{T},Nothing}=nothing, SymmetryGroup::Union{GAP.GapObj,Array{Array{Int64,1},1},Nothing}=nothing,
+function characteristic_polynomial(H::Union{Array{T,2},MatElem}; ConstantTerms::Union{Vector{T},Nothing}=nothing, SymmetryGroup::Union{GAP.GapObj,Array{Array{Int64,1},1},Nothing}=nothing,
 	OrbitRepresentation=pseudo_minimal_image, proportion=0.01, max_size=nothing, min_size=nothing, multi_threaded=false, verbose=false) where {T <: Union{Nemo.RingElem,Integer}}
 
 	BettiNumbers = betti_numbers(H, ConstantTerms=ConstantTerms, SymmetryGroup=SymmetryGroup, OrbitRepresentation=OrbitRepresentation,
@@ -183,15 +187,21 @@ function characteristic_polynomial(H::Array{T,2}; ConstantTerms::Union{Vector{T}
 	return chi
 end
 
-function number_of_chambers(H::Array{T,2}; ConstantTerms::Union{Vector{T},Nothing}=nothing, SymmetryGroup::Union{GAP.GapObj,Array{Array{Int64,1},1},Nothing}=nothing,
+function number_of_chambers(H::Union{Array{T,2},MatElem}; ConstantTerms::Union{Vector{T},Nothing}=nothing, SymmetryGroup::Union{GAP.GapObj,Array{Array{Int64,1},1},Nothing}=nothing,
 	OrbitRepresentation=pseudo_minimal_image, proportion=0.01, max_size=nothing, min_size=nothing, multi_threaded=false, verbose=false) where {T <: Union{Nemo.RingElem,Integer}}
 
     return sum(betti_numbers(H, ConstantTerms=ConstantTerms, SymmetryGroup=SymmetryGroup, OrbitRepresentation=OrbitRepresentation,
     	proportion=proportion, max_size=max_size, min_size=min_size, multi_threaded=multi_threaded, verbose=verbose))
 end
 
-function betti_numbers(H::Array{T,2}; ConstantTerms::Union{Vector{T},Nothing}=nothing, SymmetryGroup::Union{GAP.GapObj,Array{Array{Int64,1},1},Nothing}=nothing,
-    OrbitRepresentation=pseudo_minimal_image, proportion=0.01, max_size=nothing, min_size=nothing, multi_threaded=false, verbose=false) where {T <: Union{Nemo.RingElem,Integer}}
+function betti_numbers(H::Matrix{T}, characteristic::Int) where T <: Integer
+	@assert(isprime(characteristic), "characteristic must be a prime number")
+	M = matrix(GF(characteristic), H)
+	return betti_numbers(M)
+end
+
+function betti_numbers(H::Union{MatElem,Matrix{Int},Matrix{SafeInt64},Matrix{RingElem}}; ConstantTerms::Union{Vector{T},Nothing}=nothing, SymmetryGroup::Union{GAP.GapObj,Array{Array{Int64,1},1},Nothing}=nothing,
+    OrbitRepresentation=pseudo_minimal_image, proportion=0.01, max_size=nothing, min_size=nothing, multi_threaded=false, verbose=false) where T <: Union{Integer,RingElem}
 
 	# Treat the trivial case of one-dimensional arrangements separatly.
     if size(H,1) == 1 && ConstantTerms == nothing
@@ -304,8 +314,12 @@ function branch!(T::Hyperplane_Tree, CurrentHashedKey, depth::Int64, m::Int64, n
 	CurrentNode = T.L[depth][CurrentHashedKey]
     multiplicity = CurrentNode.multiplicity
     k = revert_hash!(T.TmpRestArray[tid],CurrentNode.hashed_rest,T.hash_base)
-
-	T.TmpHyperplanes[tid] .= T.Hyperplanes[tid]
+    if T.Hyperplanes[tid] isa Matrix
+    	T.TmpHyperplanes[tid] .= T.Hyperplanes[tid]
+    else
+		map!(identity, T.TmpHyperplanes[tid], T.Hyperplanes[tid])
+	end
+	
 
 	#First restrict with respect to the old indices.
 	#This gives the left_next_unbroken index.
@@ -450,7 +464,7 @@ end
 ##### Linear algebra
 #####################################################
 
-function coned_arrangement(H::Array{T,2}, ConstantTerms::Vector{T}) where {T <: Union{Nemo.RingElem,Integer}}
+function coned_arrangement(H::Union{Array{T,2},MatElem}, ConstantTerms::Vector{T}) where {T <: Union{Nemo.RingElem,Integer}}
     @assert size(H,2) == length(ConstantTerms)
     #Add constant terms as new row, i.e. as homogenized with a new variable
     ConeArr = vcat(H, ConstantTerms')
@@ -476,10 +490,13 @@ end
 function pivot_step!(M, col_index, firstr, depth, nr, nc; extra_indices=nothing)
 
 	firstnz = firstr
-    while iszero(M[firstnz,col_index]) && firstnz <= nr
+
+    while firstnz <= size(M)[1] && iszero(M[firstnz,col_index])
         firstnz += 1
     end
-    @assert firstnz <= nr
+    if firstnz > nr
+    	return
+    end
 
     if col_index == depth
     	start_tail_index = depth+1
@@ -581,10 +598,11 @@ function compare_columns(A::AbstractArray{T,2}, ind_v::Int64, ind_w::Int64, t1, 
 
         firstnz += 1
         while firstnz <= len
-
-            Nemo.mul!(t1, a, A[firstnz,ind_v])
-            Nemo.mul!(t2, b, A[firstnz,ind_w])
-
+        	# This isn't working for some reason I don't understand.
+            #Nemo.mul!(t1, a, A[firstnz,ind_v])
+            #Nemo.mul!(t2, b, A[firstnz,ind_w])
+            t1 = a*A[firstnz,ind_v]
+            t2 = b*A[firstnz,ind_w]
             if !isequal(t1, t2)
                 return false
             end
@@ -597,7 +615,7 @@ end
 
 # True when the two columns are linearly dependent
 # The following code has been provided by Tommy Hoffmann
-function compare_columns(A::AbstractArray{T,2}, ind_v::Int64, ind_w::Int64, t1, t2)::Bool where {T <: Integer}
+function compare_columns(A::Union{AbstractArray{T,2},MatElem}, ind_v::Int64, ind_w::Int64, t1, t2)::Bool where {T <: Integer}
     len = size(A,1)
 
     firstnz = 1
@@ -605,7 +623,10 @@ function compare_columns(A::AbstractArray{T,2}, ind_v::Int64, ind_w::Int64, t1, 
     while firstnz <= len && iszero(A[firstnz,ind_v])
         firstnz += 1
     end
-    @assert firstnz <= len
+    #@assert firstnz <= len
+    if firstnz > len 
+    	return true
+    end
 
     for i in 1:(firstnz-1)
         if !iszero(A[i,ind_w])
