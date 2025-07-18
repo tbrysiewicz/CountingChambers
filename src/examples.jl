@@ -358,12 +358,12 @@ end
 ######################################################
 
 
-function discriminantal_hyperplanes(MyPoints::Array{fmpq,2})
+function discriminantal_hyperplanes(MyPoints::Array{QQFieldElem,2})
     Npoints=size(MyPoints,1)
     PointDim=size(MyPoints,2)
     MyHomPoints=matrix(QQ,hcat(Array{Int,1}(ones(Npoints)),MyPoints))
     HypIterator=powerset(collect(1:Npoints),PointDim,PointDim)
-    Hyperplanes=[fmpq(i) for i in hcat([kernel(MyHomPoints[K,:])[2] for K in HypIterator])]
+    Hyperplanes=[QQFieldElem(i) for i in hcat([kernel(MyHomPoints[K,:])[2] for K in HypIterator])]
     ConstantTerms=-Hyperplanes[PointDim+1,1:size(Hyperplanes,2)]
     Hyperplanes=Hyperplanes[1:PointDim,1:size(Hyperplanes,2)]
     return [Hyperplanes,ConstantTerms]
@@ -405,7 +405,7 @@ end
 
 
 function discriminantal_hyperplanes(d::Int64,n::Int64)
-    MyPoints=[fmpq(rand(-1000:1000)//rand(-1000:1000)) for i in zeros(n,d)]
+    MyPoints=[QQFieldElem(rand(-1000:1000)//rand(-1000:1000)) for i in zeros(n,d)]
     MyFloatPoints=[float(i*1.0) for i in MyPoints]
     D=discriminantal_hyperplanes(MyPoints)
     return D
@@ -414,17 +414,17 @@ end
 function soft_discriminantal_hyperplanes(d::Int64,n::Int64)
     d=d-1
     n=n-1
-    MyPoints=[fmpq(rand(-1000:1000)//rand(-1000:1000)) for i in zeros(n-d,d)]
+    MyPoints=[QQFieldElem(rand(-1000:1000)//rand(-1000:1000)) for i in zeros(n-d,d)]
     I=zeros(d,d)
     for i in 1:d
         I[i,i]=1
     end
-    MyID=vcat([fmpq(Int(i)) for i in zeros(d)'],[fmpq(i) for i in Array{Int,2}(I)])
+    MyID=vcat([QQFieldElem(Int(i)) for i in zeros(d)'],[QQFieldElem(i) for i in Array{Int,2}(I)])
     MyID=MyID'
     MyHomPoints=matrix(QQ,vcat(MyID,hcat(Array{Int,1}(ones(n-d)),MyPoints)))
     Npoints=n
     HypIterator=reverse(collect(powerset(collect(1:Npoints),d,d)))
-    Hyperplanes=[fmpq(i) for i in hcat([kernel(MyHomPoints[K,:])[2] for K in HypIterator])]
+    Hyperplanes=[QQFieldElem(i) for i in hcat([kernel(MyHomPoints[K,:])[2] for K in HypIterator])]
     ConstantTerms=-Hyperplanes[1,1:size(Hyperplanes,2)-1]
     Hyperplanes=Hyperplanes[2:size(Hyperplanes,1),1:size(Hyperplanes,2)-1]
     return [Hyperplanes,ConstantTerms]
@@ -434,12 +434,12 @@ end
 function symmetry_soft_discriminantal(d::Int64,n::Int64)
     d=d-1
     n=n-1
-    MyPoints=[fmpq(rand(-1000:1000)//rand(-1000:1000)) for i in zeros(n-d,d)]
+    MyPoints=[QQFieldElem(rand(-1000:1000)//rand(-1000:1000)) for i in zeros(n-d,d)]
     I=zeros(d,d)
     for i in 1:d
         I[i,i]=1
     end
-    MyID=vcat([fmpq(Int(i)) for i in zeros(d)'],[fmpq(i) for i in Array{Int,2}(I)])
+    MyID=vcat([QQFieldElem(Int(i)) for i in zeros(d)'],[QQFieldElem(i) for i in Array{Int,2}(I)])
     MyID=MyID'
     MyHomPoints=matrix(QQ,vcat(MyID,hcat(Array{Int,1}(ones(n-d)),MyPoints)))
     Npoints=n
