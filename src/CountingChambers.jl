@@ -178,7 +178,7 @@ function characteristic_polynomial(H::Union{Array{T,2},MatElem}; ConstantTerms::
 	BettiNumbers = betti_numbers(H, ConstantTerms=ConstantTerms, SymmetryGroup=SymmetryGroup, OrbitRepresentation=OrbitRepresentation,
     	proportion=proportion, max_size=max_size, min_size=min_size, multi_threaded=multi_threaded, verbose=verbose)
 
-	R, t = PolynomialRing(ZZ, "t")
+	R, t = polynomial_ring(ZZ, "t")
 	chi = R(0)
 	n = length(BettiNumbers)
 	for i in 1:n
